@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Get User Information with Customizations</title>
-  <script src="cosmetics.js"></script>
+  <script src="cosmetics.js"></script> <!-- Ensure this path is correct -->
 </head>
 <body>
 
@@ -32,7 +32,6 @@
 
           if (user) {
             const userId = user.user_id;
-
             let userIDInt = [...userId.toString()].reduce((r, v) => r * BigInt(36) + BigInt(parseInt(v, 36)), 0n);
             userIDInt >>= BigInt(32);
             userIDInt >>= BigInt(32);
@@ -43,15 +42,13 @@
 
             const profileUrl = `https://grabvr.quest/levels?tab=tab_other_user&user_id=${userId}`;
 
-            const outputText = `
+            document.getElementById("output").innerHTML = `
               <strong>Username:</strong> ${user.user_name}<br>
-              <strong>Profile URL:</strong> <a href="${profileUrl}" target="_blank">${profileUrl}</a><br>
+              <strong>Profile URL:</strong> <a href="${profileUrl}" target="_blank">Profile</a><br>
               <strong>Playing Since:</strong> ${formattedDate}<br>
               <strong>Level Count:</strong> ${user.user_level_count || 0}<br>
               ${customizations}
             `;
-
-            document.getElementById("output").innerHTML = outputText;
           } else {
             document.getElementById("output").innerText = "User not found.";
           }
@@ -66,7 +63,7 @@
 
     function formatDate(date) {
       const day = date.getDate();
-      const month = date.toLocaleString('en-US', { month: 'long' });
+      const month = date.toLocaleString('default', { month: 'long' });
       const year = date.getFullYear();
       const hours = date.getHours().toString().padStart(2, '0');
       const minutes = date.getMinutes().toString().padStart(2, '0');
@@ -76,13 +73,11 @@
     }
 
     function formatCustomizations(customizations) {
-      let customizationsText = 'Active Customizations:<br>';
+      let customizationsText = customizations && customizations.items && Object.keys(customizations.items).length > 0 ? 'Active Customizations:<br>' : 'No active customizations.<br>';
       if (customizations && customizations.items) {
-        for (const [key, value] of Object.entries(customizations.items)) {
-          const cosmetic = cosmeticsMapping[key]; // Accessing the title from cosmetics.js
-          const cosmeticTitle = cosmetic ? cosmetic.title : "Unknown Item"; // Default text if cosmetic isn't mapped
-
-          customizationsText += `${cosmeticTitle}<br>`; // Using the title from the mapping
+        for (const key of Object.keys(customizations.items)) {
+          const cosmeticTitle = cosmeticsMapping[key] ? cosmeticsMapping[key].title : "Unknown Item";
+          customizationsText += `${cosmeticTitle}<br>`;
         }
       }
       return customizationsText;
