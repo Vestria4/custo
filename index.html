@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Get User Information with Customizations</title>
+  <script src="cosmetics.js"></script>
+</head>
+<body>
+
+  <h2>Get User Information</h2>
+
+  <form id="userForm">
+    <label for="username">Enter Username: </label>
+    <input type="text" id="username" required>
+    <button type="button" onclick="getUserInformation()">Get Information</button>
+  </form>
+
+  <div id="output"></div>
+
+  <script>
+    async function getUserInformation() {
+      const username = document.getElementById("username").value.toLowerCase();
+      const apiUrl = `https://api.slin.dev/grab/v1/list?max_format_version=9&type=user_name&search_term=${username}`;
+
+      try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+
+        if (data && data.length > 0) {
+          const user = data.find(entry => entry.user_name.toLowerCase() === username);
+
+          if (user) {
+            const userId = user.user_id;
+
+            let userIDInt = [...userId.toString()].reduce((r, v) => r * BigInt(36) + BigInt(parseInt(v, 36)), 0n);
+            userIDInt >>= BigInt(32);
+            userIDInt >>= BigInt(32);
+            const myNumber = Number(userIDInt);
+            const joinDate = new Date(myNumber);
+            const formattedDate = formatDate(joinDate);
+            const customizations = formatCustomizations(user.active_customizations);
+
+            const profileUrl = `https://grabvr.quest/levels?tab=tab_other_user&user_id=${userId}`;
+
+            const outputText = `
+              <strong>Username:</strong> ${user.user_name}<br>
+              <strong>Profile URL:</strong> <a href="${profileUrl}" target="_blank">${profileUrl}</a><br>
+              <strong>Playing Since:</strong> ${formattedDate}<br>
+              <strong>Level Count:</strong> ${user.user_level_count || 0}<br>
+              ${customizations}
+            `;
+
+            document.getElementById("output").innerHTML = outputText;
+          } else {
+            document.getElementById("output").innerText = "User not found.";
+          }
+        } else {
+          document.getElementById("output").innerText = "User not found.";
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        document.getElementById("output").innerText = "Error fetching data.";
+      }
+    }
+
+    function formatDate(date) {
+      const day = date.getDate();
+      const month = date.toLocaleString('en-US', { month: 'long' });
+      const year = date.getFullYear();
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      const seconds = date.getSeconds().toString().padStart(2, '0');
+
+      return `${day} ${month} ${year} ${hours}:${minutes}:${seconds}`;
+    }
+
+    function formatCustomizations(customizations) {
+      let customizationsText = 'Active Customizations:<br>';
+      if (customizations && customizations.items) {
+        for (const [key, value] of Object.entries(customizations.items)) {
+          const cosmetic = cosmeticsMapping[key]; // Accessing the title from cosmetics.js
+          const cosmeticTitle = cosmetic ? cosmetic.title : "Unknown Item"; // Default text if cosmetic isn't mapped
+
+          customizationsText += `${cosmeticTitle}<br>`; // Using the title from the mapping
+        }
+      }
+      return customizationsText;
+    }
+  </script>
+
+</body>
+</html>
